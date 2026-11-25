@@ -21,6 +21,11 @@
     project_src: "{{ app_source | default(playbook_dir ~ '/../..') }}"
     local_archive: /tmp/ugazee-src.tgz
     remote_archive: "{{ app_dir }}/src.tgz"
+    # Swapfile is OFF by default: with little free disk it can starve the host.
+    create_swap: "{{ create_swap | default(false) }}"
+    # Docker image tarball on the control node. When set, it is transferred and
+    # loaded instead of building on the server (recommended on small VPS hosts).
+    image_archive: "{{ image_archive | default('') }}"
     # Set manage_nginx=true + server_name=<domain> to install an nginx vhost.
     manage_nginx: "{{ manage_nginx | default(false) }}"
     server_name: "{{ server_name | default('_') }}"
@@ -65,8 +70,9 @@
       register: swap_check
       changed_when: false
 
-    - name: Add 2G swapfile when memory is low and no swap exists
+    - name: Add swapfile when explicitly requested and memory is low
       when:
+        - create_swap | bool
         - ansible_memtotal_mb | int < 2048
         - swap_check.stdout | trim == ''
       block:
@@ -166,6 +172,16 @@
           stack. Re-run with -e host_port=<free port> (discovery playbook shows
           which ports are free).
 
+    # ---------------- disk housekeeping ----------------
+    - name: Measure free space on /
+      ansible.builtin.set_fact:
+        root_free_mb: >-
+          {{ (ansible_mounts | selectattr('mount', 'equalto', '/') | first).size_available | int // 1048576 }}
+
+    - name: Note available disk
+      ansible.builtin.debug:
+        msg: "free on /: {{ root_free_mb }} MB (run prune-docker.yml to reclaim space)"
+
     # ---------------- build & run ----------------
     - name: Record current image id
       ansible.builtin.command: docker image inspect --format {% raw %}'{{.Id}}'{% endraw %} ugazee-web:latest
@@ -173,7 +189,35 @@
       changed_when: false
       failed_when: false
 
-    - name: Build application image
+    - name: Require a prebuilt image when the host cannot spare disk for a build
+      ansible.builtin.assert:
+        that: image_archive | length > 0 or root_free_mb | int > 1500
+        fail_msg: >-
+          Only {{ root_free_mb }} MB free on /. Pass a prebuilt tarball:
+          -e image_archive=/path/to/ugazee-image.tar
+
+    - name: Transfer and load prebuilt image
+      when: image_archive | length > 0
+      block:
+        - name: Upload image tarball
+          ansible.builtin.copy:
+            src: "{{ image_archive }}"
+            dest: "{{ app_dir }}/ugazee-image.tar"
+            mode: "0644"
+
+        - name: Load image
+          ansible.builtin.command:
+            cmd: docker load -i {{ app_dir }}/ugazee-image.tar
+          register: image_load
+          changed_when: "'Loaded image' in image_load.stdout"
+
+        - name: Remove transferred tarball
+          ansible.builtin.file:
+            path: "{{ app_dir }}/ugazee-image.tar"
+            state: absent
+
+    - name: Build application image on the server
+      when: image_archive | length == 0
       ansible.builtin.command:
         cmd: docker compose build
         chdir: "{{ app_dir }}"

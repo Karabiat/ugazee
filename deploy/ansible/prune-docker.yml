@@ -1,0 +1,74 @@
+---
+# Reclaim Docker disk space without disturbing running containers.
+#
+#   cd deploy/ansible
+#   ansible-playbook prune-docker.yml                 # safe default
+#   ansible-playbook prune-docker.yml -e prune_volumes=true
+#   ansible-playbook prune-docker.yml -e prune_age=168h
+#
+# Safety model:
+#   - running containers are never touched
+#   - only images / build cache / containers older than prune_age are removed
+#   - volumes are NEVER pruned unless prune_volumes=true is passed explicitly
+#
+- name: Prune unused Docker data on {{ inventory_hostname }}
+  hosts: ugazee
+  gather_facts: false
+  become: true
+
+  vars:
+    prune_age: "{{ prune_age | default('24h') }}"
+    prune_volumes: "{{ prune_volumes | default(false) }}"
+
+  tasks:
+    - name: Docker disk usage before pruning
+      ansible.builtin.command: docker system df
+      register: df_before
+      changed_when: false
+
+    - name: Remove stopped containers older than {{ prune_age }}
+      ansible.builtin.command:
+        cmd: docker container prune -f --filter until={{ prune_age }}
+      register: container_prune
+      changed_when: "'Deleted Containers' in container_prune.stdout or 'Total reclaimed space: 0B' not in container_prune.stdout"
+
+    - name: Remove unused images older than {{ prune_age }}
+      ansible.builtin.command:
+        cmd: docker image prune -af --filter until={{ prune_age }}
+      register: image_prune
+      changed_when: "'deleted:' in image_prune.stdout"
+
+    - name: Remove build cache older than {{ prune_age }}
+      ansible.builtin.command:
+        cmd: docker builder prune -f --filter until={{ prune_age }}
+      register: builder_prune
+      changed_when: "'Total:' in builder_prune.stdout and '0B' not in builder_prune.stdout"
+
+    - name: Remove unused networks
+      ansible.builtin.command:
+        cmd: docker network prune -f
+      register: network_prune
+      changed_when: "'Deleted Networks' in network_prune.stdout"
+
+    - name: Remove unused volumes (opt-in only)
+      ansible.builtin.command:
+        cmd: docker volume prune -f
+      register: volume_prune
+      when: prune_volumes | bool
+      changed_when: "'Deleted Volumes' in (volume_prune.stdout | default(''))"
+
+    - name: Docker disk usage after pruning
+      ansible.builtin.command: docker system df
+      register: df_after
+      changed_when: false
+
+    - name: Prune summary
+      ansible.builtin.debug:
+        msg:
+          before: "{{ df_before.stdout_lines }}"
+          containers: "{{ container_prune.stdout_lines | select('search', 'reclaimed') | list }}"
+          images: "{{ image_prune.stdout_lines | select('search', 'reclaimed') | list }}"
+          build_cache: "{{ builder_prune.stdout_lines | select('search', 'Total') | list }}"
+          networks: "{{ network_prune.stdout_lines | select('search', 'Deleted') | default([], true) | list }}"
+          volumes: "{{ (volume_prune.stdout_lines | select('search', 'reclaimed') | list) if prune_volumes | bool else 'skipped' }}"
+          after: "{{ df_after.stdout_lines }}"
