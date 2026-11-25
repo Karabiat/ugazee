@@ -1,20 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
+  BadgeCheck,
   ChevronLeft,
   ChevronRight,
-  Heart,
+  Headphones,
   Library,
-  MessageCircle,
   MoreHorizontal,
   Pause,
   Play,
+  Radio,
   Search,
-  Shuffle,
   UserPlus,
-  Headphones,
 } from "lucide-react";
 import { config, type Release } from "@/lib/config";
 import { useAudio } from "@/components/AudioProvider";
@@ -23,291 +22,305 @@ import {
   AppMiniPlayer,
   ReleaseDetail,
   SectionHeading,
-  TrackEqualizer,
-  Waveform,
 } from "@/components/apps/Shared";
 
 const ACCENT = "#FF5500";
 
-const plays = ["1.2M", "486K", "312K", "188K", "94K"];
-
 export function SoundCloud({ onClose }: { onClose: () => void }) {
   const [detail, setDetail] = useState<Release | null>(null);
-  const { isPlaying, currentTime, duration, toggle, seek } = useAudio();
-
-  const tracks = useMemo(
-    () =>
-      config.discography.map((release, index) => ({
-        release,
-        track: release.tracklist[0],
-        plays: plays[index] ?? "12K",
-        comments: [4821, 1290, 873, 511, 208][index] ?? 12,
-      })),
-    [],
-  );
-
-  const progress = duration > 0 ? currentTime / duration : 0;
+  const { isPlaying, toggle } = useAudio();
+  const sc = config.soundcloud;
 
   return (
     <div className="absolute inset-0 z-50 overflow-hidden bg-[#0b0806] text-white">
-      <div className="no-scrollbar absolute inset-0 overflow-y-auto">
-        <div className="relative h-[290px] overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={config.artist.poster}
-            alt=""
-            className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[52%_15%]"
-            draggable={false}
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-[#2b1205]/30 to-[#0b0806]" />
-          <div className="absolute inset-0 bg-[linear-gradient(95deg,rgba(15,7,2,0.75),transparent_72%)]" />
+      <div className="no-scrollbar absolute inset-0 overflow-y-auto pb-[120px]">
+        {/* ── Profile header ─────────────────────────────────────────────── */}
+        <div className="relative overflow-hidden px-[18px] pb-[4px] pt-[104px]">
+          <div className="pointer-events-none absolute inset-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sc.avatar}
+              alt=""
+              className="h-full w-full scale-[1.25] object-cover object-[50%_22%] opacity-25 blur-[26px]"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#160c06]/70 via-[#0d0906]/90 to-[#0b0806]" />
+          </div>
 
-          <div className="absolute inset-x-0 bottom-0 px-[20px] pb-[17px]">
-            <div className="flex items-center gap-[6px] text-[8px] font-bold uppercase tracking-[0.18em] text-[#FF8A4C]">
-              <span className="flex h-[15px] w-[15px] items-center justify-center rounded-full bg-[#FF5500]">
-                <Headphones size={9} className="text-white" aria-hidden="true" />
-              </span>
-              Artist · Lagos
+          <div className="relative flex items-start gap-[13px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sc.avatar}
+              alt="Ugazee"
+              className="h-[92px] w-[92px] shrink-0 rounded-[14px] object-cover shadow-[0_14px_34px_-12px_rgba(0,0,0,0.9)] ring-1 ring-white/15"
+              draggable={false}
+            />
+            <div className="min-w-0 flex-1 pt-[2px]">
+              <div className="flex items-center gap-[5px]">
+                <h1 className="truncate text-[28px] font-black leading-none tracking-[-0.045em] text-white">
+                  Ugazee
+                </h1>
+                <BadgeCheck
+                  size={15}
+                  className="shrink-0 text-[#FF8A4C]"
+                  strokeWidth={2.4}
+                  aria-hidden="true"
+                />
+              </div>
+              <div className="mt-[7px] inline-flex items-center gap-[4px] rounded-[4px] bg-[#FF5500]/15 px-[5px] py-[2px]">
+                <span className="flex h-[10px] w-[10px] items-center justify-center rounded-full bg-[#FF5500]">
+                  <Headphones size={6} className="text-white" aria-hidden="true" />
+                </span>
+                <span className="text-[7.5px] font-bold uppercase tracking-[0.13em] text-[#FF8A4C]">
+                  {sc.tier}
+                </span>
+              </div>
+              <p className="mt-[7px] text-[9.5px] font-medium text-white/50">
+                <span className="text-white/75">{sc.trackCount} Tracks</span>
+                <span className="mx-[5px] text-white/25">·</span>
+                <span className="text-white/75">{sc.followers} followers</span>
+              </p>
+              <p className="mt-[2px] text-[8px] uppercase tracking-[0.1em] text-white/30">
+                {sc.city} · Drums of Liberation
+              </p>
             </div>
-            <h1 className="mt-[4px] text-[50px] font-black leading-[0.84] tracking-[-0.055em] text-white drop-shadow-[0_8px_26px_rgba(0,0,0,0.55)]">
-              Ugazee
-            </h1>
-            <div className="mt-[9px] flex items-center gap-[13px] text-[9.5px] font-medium text-white/55">
-              <span>803 followers</span>
-              <span className="h-[2.5px] w-[2.5px] rounded-full bg-white/35" />
-              <span>27 tracks</span>
-            </div>
-            <div className="mt-[12px] flex items-center gap-[7px]">
-              <button
-                type="button"
-                className="flex h-[32px] items-center gap-[5px] rounded-full bg-[#FF5500] px-[14px] text-[9.5px] font-bold uppercase tracking-[0.04em] text-white shadow-[0_8px_22px_rgba(255,85,0,0.25)] active:scale-95"
-                aria-label="Follow Ugazee on SoundCloud"
-              >
-                <UserPlus size={12} strokeWidth={2.2} aria-hidden="true" />
-                Follow
-              </button>
-              <button
-                type="button"
-                className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-white/20 bg-black/25 text-white/70 backdrop-blur-md hover:bg-black/40 hover:text-white"
-                aria-label="Message Ugazee"
-              >
-                <MessageCircle size={14} strokeWidth={1.9} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                className="flex h-[32px] w-[32px] items-center justify-center rounded-full border border-white/20 bg-black/25 text-white/70 backdrop-blur-md hover:bg-black/40 hover:text-white"
-                aria-label="Like Ugazee"
-              >
-                <Heart size={14} strokeWidth={1.9} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                className="ml-auto flex h-[30px] w-[30px] items-center justify-center rounded-full bg-black/20 text-white/60 backdrop-blur-md hover:bg-black/35 hover:text-white"
-                aria-label="More options"
-              >
-                <MoreHorizontal size={18} aria-hidden="true" />
-              </button>
-            </div>
+          </div>
+
+          <div className="relative mt-[13px] flex items-center gap-[7px]">
+            <a
+              href={config.platforms.soundcloud.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="flex h-[32px] items-center gap-[5px] rounded-full bg-[#FF5500] px-[15px] text-[9.5px] font-bold uppercase tracking-[0.04em] text-white shadow-[0_8px_22px_rgba(255,85,0,0.28)] active:scale-95"
+              aria-label="Follow Ugazee on SoundCloud"
+            >
+              <UserPlus size={12} strokeWidth={2.2} aria-hidden="true" />
+              Follow
+            </a>
+            <a
+              href={config.platforms.soundcloud.url}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="flex h-[32px] items-center gap-[5px] rounded-full border border-white/15 bg-white/[0.06] px-[12px] text-[9px] font-semibold text-white/80 backdrop-blur-md hover:bg-white/[0.12] hover:text-white"
+              aria-label="Open Ugazee Station on SoundCloud"
+            >
+              <Radio size={13} strokeWidth={1.9} aria-hidden="true" />
+              Station
+            </a>
+            <button
+              type="button"
+              className="ml-auto flex h-[32px] w-[32px] items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white/65 backdrop-blur-md hover:bg-white/[0.12] hover:text-white"
+              aria-label="More options"
+            >
+              <MoreHorizontal size={17} aria-hidden="true" />
+            </button>
           </div>
         </div>
 
-        <div className="relative pb-[120px]">
-          <div className="flex items-center gap-[16px] border-b border-white/[0.07] px-[20px]">
-            {["All", "Popular", "Albums", "Playlists"].map((tab, index) => (
+        {/* ── Tabs ───────────────────────────────────────────────────────── */}
+        <div className="relative mt-[12px] px-[18px]">
+          <div className="flex gap-[6px] rounded-[10px] bg-white/[0.05] p-[3px]">
+            {["Tracks", "Albums", "Playlists"].map((tab, index) => (
               <span
                 key={tab}
-                className={`relative py-[10px] text-[9.5px] font-semibold uppercase tracking-[0.08em] ${
-                  index === 1 ? "text-[#FF8A4C]" : "text-white/35"
+                className={`flex-1 rounded-[8px] py-[7px] text-center text-[9px] font-bold uppercase tracking-[0.09em] ${
+                  index === 0
+                    ? "bg-white text-black shadow-[0_2px_10px_rgba(0,0,0,0.35)]"
+                    : "text-white/45"
                 }`}
               >
                 {tab}
-                {index === 1 && (
-                  <span className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#FF5500]" />
-                )}
               </span>
             ))}
           </div>
+        </div>
 
-          <section className="px-[18px] pt-[16px]" aria-labelledby="sc-popular">
-            <SectionHeading
-              title="Popular tracks"
-              action={
-                <button
-                  type="button"
-                  className="flex items-center gap-[3px] text-[8px] font-semibold uppercase tracking-[0.12em] text-white/35"
-                  aria-label="Shuffle popular tracks"
-                >
-                  <Shuffle size={11} aria-hidden="true" /> Shuffle
-                </button>
-              }
+        {/* ── Featured single ────────────────────────────────────────────── */}
+        <section className="mt-[14px] px-[18px]" aria-labelledby="sc-featured">
+          <div className="relative overflow-hidden rounded-[13px] border border-[#FF5500]/25 bg-[linear-gradient(100deg,rgba(255,85,0,0.16),rgba(255,85,0,0.03))] p-[10px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={config.track.cover}
+              alt=""
+              className="absolute -right-4 -top-6 h-[110px] w-[110px] rotate-[8deg] rounded-[10px] object-cover opacity-25 blur-[1px]"
+              draggable={false}
             />
-            <div className="mt-[7px] space-y-[2px]">
-              {tracks.map(({ release, track, plays: count, comments }, index) => {
-                const current = track.title === config.track.title;
-                const rowProgress = current ? progress : 0.34 + index * 0.02;
-                return (
-                  <div
-                    key={release.id}
-                    className="group flex items-center gap-[10px] rounded-[9px] px-[4px] py-[8px] transition-colors hover:bg-white/[0.04]"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setDetail(release)}
-                      className="flex min-w-0 flex-1 items-center gap-[10px] text-left"
-                      aria-label={`Open ${release.title} by Ugazee`}
-                    >
-                      <div className="relative h-[47px] w-[47px] shrink-0 overflow-hidden rounded-[5px]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={release.cover}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          draggable={false}
-                        />
-                        {current && (
-                          <span className="absolute inset-0 flex items-center justify-center bg-black/35">
-                            <TrackEqualizer playing={isPlaying} color="#FF8A4C" size="md" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-baseline gap-[6px]">
-                          <p
-                            className="min-w-0 truncate text-[11.5px] font-semibold leading-tight"
-                            style={{ color: current ? "#FF8A4C" : "rgba(255,255,255,0.92)" }}
-                          >
-                            {track.title}
-                          </p>
-                          <span className="text-[8px] text-white/30">·</span>
-                          <p className="truncate text-[9px] text-white/40">
-                            {release.type}
-                          </p>
-                        </div>
-                        <p className="truncate text-[8px] text-white/30">
-                          Ugazee · {count} plays
-                        </p>
-                        <div className="mt-[4px]">
-                          <Waveform
-                            seed={index + 1}
-                            color={current ? "#FF8A4C" : "#FF5500"}
-                            count={46}
-                            height={17}
-                            progress={rowProgress}
-                          />
-                        </div>
-                      </div>
-                    </button>
-                    <div className="flex shrink-0 flex-col items-center gap-[4px]">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (current) {
-                            if (!isPlaying) seek(0);
-                            void toggle();
-                          } else setDetail(release);
-                        }}
-                        className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#FF5500] text-white shadow-[0_4px_14px_rgba(255,85,0,0.3)] transition-transform hover:scale-105 active:scale-90"
-                        aria-label={
-                          current && isPlaying ? "Pause Detty December" : `Play ${track.title}`
-                        }
-                      >
-                        {current && isPlaying ? (
-                          <Pause size={11} fill="currentColor" strokeWidth={0} aria-hidden="true" />
-                        ) : (
-                          <Play
-                            size={11}
-                            fill="currentColor"
-                            strokeWidth={0}
-                            className="ml-[1px]"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
-                      <span className="flex items-center gap-[2px] text-[7.5px] text-white/25">
-                        <MessageCircle size={7} aria-hidden="true" />
-                        {comments}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="mt-[15px] px-[18px]" aria-labelledby="sc-releases">
-            <SectionHeading
-              title="Albums & EPs"
-              action={
-                <span className="flex items-center gap-[2px] text-[8px] font-semibold uppercase tracking-[0.1em] text-white/30">
-                  All <ChevronRight size={11} aria-hidden="true" />
-                </span>
-              }
-            />
-            <div className="mt-[9px] grid grid-cols-2 gap-[9px]">
-              {config.discography.slice(0, 4).map((release) => (
-                <button
-                  key={release.id}
-                  type="button"
-                  onClick={() => setDetail(release)}
-                  className="group overflow-hidden rounded-[10px] border border-white/[0.07] bg-white/[0.025] text-left transition-colors hover:border-[#FF5500]/30"
-                  aria-label={`Open ${release.title}`}
-                >
-                  <div className="relative aspect-[1.6/1] overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={release.cover}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                      draggable={false}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-                    <div className="absolute bottom-[6px] left-[8px]">
-                      <p className="text-[9.5px] font-bold leading-tight text-white">
-                        {release.title}
-                      </p>
-                      <p className="text-[7px] text-white/50">
-                        {release.type} · {release.year}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="mt-[21px] px-[18px]">
-            <SectionHeading title="About" />
-            <div className="mt-[8px] flex gap-[11px] rounded-[12px] border border-white/[0.06] bg-white/[0.02] p-[12px]">
+            <div className="relative flex items-center gap-[10px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={config.artist.poster}
-                alt=""
-                className="h-[48px] w-[48px] rounded-full object-cover object-top"
+                src={config.track.cover}
+                alt="Detty December cover"
+                className="h-[52px] w-[52px] rounded-[7px] object-cover shadow-[0_8px_20px_-6px_rgba(0,0,0,0.8)]"
                 draggable={false}
               />
-              <div>
-                <p className="text-[10.5px] font-semibold text-white/90">Ugazee</p>
-                <p className="mt-[2px] text-[8px] leading-[1.5] text-white/35">
-                  {config.artist.bio}
+              <div className="min-w-0 flex-1">
+                <p className="text-[7.5px] font-bold uppercase tracking-[0.15em] text-[#FF8A4C]">
+                  New single · {config.album.dropLabel}
                 </p>
-                <a
-                  href={config.platforms.soundcloud.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="mt-[5px] inline-flex items-center gap-[2px] text-[8px] font-semibold uppercase tracking-[0.1em] text-[#FF8A4C]"
-                >
-                  soundcloud.com/ugazee <ChevronRight size={9} aria-hidden="true" />
-                </a>
+                <p className="mt-[2px] truncate text-[15px] font-bold tracking-[-0.02em] text-white">
+                  Detty December
+                </p>
+                <p className="truncate text-[8.5px] text-white/45">Ugazee · out 25 December</p>
               </div>
+              <button
+                type="button"
+                onClick={() => void toggle()}
+                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[#FF5500] text-white shadow-[0_6px_18px_rgba(255,85,0,0.35)] transition-transform hover:scale-105 active:scale-90"
+                aria-label={isPlaying ? "Pause Detty December" : "Play Detty December"}
+              >
+                {isPlaying ? (
+                  <Pause size={12} fill="currentColor" strokeWidth={0} aria-hidden="true" />
+                ) : (
+                  <Play
+                    size={12}
+                    fill="currentColor"
+                    strokeWidth={0}
+                    className="ml-[1px]"
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <footer className="mt-6 px-[20px] text-[8px] text-white/20">
-            © 2026 Ugazee · SoundCloud concept experience
-          </footer>
-        </div>
+        {/* ── Real track list ────────────────────────────────────────────── */}
+        <section className="mt-[15px] px-[18px]" aria-labelledby="sc-tracks">
+          <SectionHeading
+            title="Tracks"
+            action={
+              <span className="flex items-center gap-[2px] text-[8px] font-semibold uppercase tracking-[0.1em] text-white/30">
+                {sc.trackCount} tracks <ChevronRight size={11} aria-hidden="true" />
+              </span>
+            }
+          />
+          <div className="mt-[6px] space-y-[1px]">
+            {sc.tracks.map((track) => (
+              <a
+                key={track.url}
+                href={track.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="group flex items-center gap-[10px] rounded-[9px] px-[4px] py-[7px] transition-colors hover:bg-white/[0.045]"
+                aria-label={`Play ${track.title} on SoundCloud`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={track.artwork}
+                  alt=""
+                  className="h-[43px] w-[43px] shrink-0 rounded-[5px] object-cover ring-1 ring-white/[0.06]"
+                  draggable={false}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold leading-tight text-white/90">
+                    {track.title}
+                  </p>
+                  <p className="mt-[2px] truncate text-[8.5px] leading-tight text-white/35">
+                    Ugazee
+                  </p>
+                </div>
+                <span className="shrink-0 text-[8.5px] tabular-nums text-white/25">
+                  {track.duration}
+                </span>
+                <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border border-white/10 text-white/45 transition-colors group-hover:border-[#FF5500]/60 group-hover:bg-[#FF5500] group-hover:text-white">
+                  <Play
+                    size={9}
+                    fill="currentColor"
+                    strokeWidth={0}
+                    className="ml-[1px]"
+                    aria-hidden="true"
+                  />
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Albums & EPs from the real catalogue ───────────────────────── */}
+        <section className="mt-[19px] px-[18px]" aria-labelledby="sc-releases">
+          <SectionHeading
+            title="Albums & EPs"
+            action={
+              <span className="flex items-center gap-[2px] text-[8px] font-semibold uppercase tracking-[0.1em] text-white/30">
+                All <ChevronRight size={11} aria-hidden="true" />
+              </span>
+            }
+          />
+          <div className="mt-[9px] grid grid-cols-2 gap-[9px]">
+            {config.discography.slice(0, 4).map((release) => (
+              <button
+                key={release.id}
+                type="button"
+                onClick={() => setDetail(release)}
+                className="group overflow-hidden rounded-[10px] border border-white/[0.07] bg-white/[0.025] text-left transition-colors hover:border-[#FF5500]/30"
+                aria-label={`Open ${release.title}`}
+              >
+                <div className="relative aspect-[1.6/1] overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={release.cover}
+                    alt=""
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    draggable={false}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+                  <div className="absolute bottom-[6px] left-[8px]">
+                    <p className="text-[9.5px] font-bold leading-tight text-white">
+                      {release.title}
+                    </p>
+                    <p className="text-[7px] text-white/50">
+                      {release.type} · {release.year}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* ── About ──────────────────────────────────────────────────────── */}
+        <section className="mt-[21px] px-[18px]">
+          <SectionHeading title="About" />
+          <div className="mt-[8px] flex gap-[11px] rounded-[12px] border border-white/[0.06] bg-white/[0.02] p-[12px]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={sc.avatar}
+              alt=""
+              className="h-[48px] w-[48px] shrink-0 rounded-full object-cover"
+              draggable={false}
+            />
+            <div className="min-w-0">
+              <p className="flex items-center gap-[4px] text-[10.5px] font-semibold text-white/90">
+                Ugazee
+                <BadgeCheck size={11} className="text-[#FF8A4C]" aria-hidden="true" />
+              </p>
+              <p className="mt-[2px] text-[8px] leading-[1.5] text-white/35">
+                {sc.description}
+              </p>
+              <p className="mt-[3px] text-[8px] leading-[1.5] text-white/30">
+                {sc.trackCount} tracks · {sc.followers} followers · {sc.city}
+              </p>
+              <a
+                href={config.platforms.soundcloud.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-[5px] inline-flex items-center gap-[2px] text-[8px] font-semibold uppercase tracking-[0.1em] text-[#FF8A4C]"
+              >
+                {sc.handle} <ChevronRight size={9} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <footer className="mt-6 px-[20px] text-[8px] text-white/20">
+          © 2026 Ugazee · SoundCloud concept experience
+        </footer>
       </div>
 
+      {/* Solid scrim so scrolled rows never collide with the status bar/chrome. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-[106px] bg-gradient-to-b from-[#0b0806] via-[#0b0806]/95 to-transparent" />
+
+      {/* ── App chrome ─────────────────────────────────────────────────── */}
       <div className="absolute inset-x-0 top-[54px] z-30 flex h-[44px] items-center justify-between px-[14px]">
         <button
           type="button"

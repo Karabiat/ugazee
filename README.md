@@ -105,16 +105,20 @@ public/img/covers/iskaba-lol-remix.jpg
 
 Use 1:1 JPG/PNG files at 900×900 or larger. The six catalogue covers are the official Spotify artwork; `detty-december.jpg` is the local single art. Update the filenames in `lib/config.ts` if they change.
 
+### SoundCloud profile
+
+The SoundCloud app mirrors the real profile (`soundcloud.com/ugazee`): 78 tracks, 587 followers, ARTIST PRO, and the current uploads. Profile stats, track titles, durations and links live in `config.soundcloud`; the avatar and track artwork are in `public/img/soundcloud/` (500×500 JPG). Update the `config.soundcloud.tracks` array when new uploads land.
+
 ### Replace platform links
 
-Spotify is wired to the real artist page and each release (`open.spotify.com/artist/7kfEng4OspTrDhaVjucde6`). Apple Music and SoundCloud still use search fallbacks so the site never links to the wrong profile. Before launch, replace them with the official artist/release URLs:
+Spotify is wired to the real artist page and each release (`open.spotify.com/artist/7kfEng4OspTrDhaVjucde6`), and SoundCloud points at the real profile (`soundcloud.com/ugazee`). Apple Music still uses a search fallback so the site never links to the wrong profile. Before launch, replace it with the official artist/release URL:
 
 ```ts
 // lib/config.ts
 platforms: {
   spotify:     { url: "https://open.spotify.com/artist/…" },
   appleMusic:  { url: "https://music.apple.com/artist/…" },
-  soundcloud:  { url: "https://soundcloud.com/…" },
+  soundcloud:  { url: "https://soundcloud.com/ugazee" },
 }
 ```
 
@@ -131,7 +135,7 @@ Sizing, masks and squircle behaviour stay identical.
 
 ### Dates and copy
 
-- Album release date: `config.album.dropISO` (currently `2026-12-12T00:00:00+01:00`).
+- Album release date: `config.album.dropISO` (currently `2026-12-25T00:00:00+01:00`).
 - Notification delay: `config.notification.minDelayMs` / `maxDelayMs`.
 - Banner auto-dismiss: `config.notification.autoDismissMs`.
 - Messages replies: `config.messages.replies` (prompt → scripted reply).

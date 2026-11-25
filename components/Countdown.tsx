@@ -61,7 +61,7 @@ export function Countdown({ variant = "compact", className = "" }: Props) {
             {parts?.done ? "Streaming now" : "Days to go"}
           </p>
           <p className="text-[11px] font-medium text-white/90 tabular-nums">
-            {parts?.done ? "12.12.26" : hours}
+            {parts?.done ? config.album.dropLabel : hours}
           </p>
         </div>
       </div>

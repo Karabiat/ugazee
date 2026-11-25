@@ -664,7 +664,7 @@ function ClockApp({ onClose, app }: AppProps & { app: IosApp }) {
                 Album day
               </span>
             </div>
-            <p className="text-[9px] text-white/35">December 12 · Detty December</p>
+            <p className="text-[9px] text-white/35">December 25 · Detty December</p>
           </div>
         ) : (
           <div className="px-[18px] pt-[20px] text-center">
@@ -879,7 +879,7 @@ function MapsApp({ onClose, app }: AppProps & { app: IosApp }) {
               Eko Hotel · Lagos
             </p>
             <p className="mt-[2px] text-[9px] text-white/40">
-              12.12.26 · 9:00 PM · 1.2 km away
+              12.25.26 · 9:00 PM · 1.2 km away
             </p>
           </div>
           <button
@@ -918,7 +918,7 @@ function NotesApp({ onClose, app }: AppProps & { app: IosApp }) {
   const tasks = [
     "Master delivered ✓",
     "Visualizer exported ✓",
-    "Album drops 12.12",
+    "Album drops 12.25",
     "Send Ugazee the addy",
   ];
   return (
@@ -1072,7 +1072,7 @@ function CalendarApp({ onClose, app }: AppProps & { app: IosApp }) {
             {[
               ["Tonight", "Listening party · Eko Hotel"],
               ["Dec 05", "Visualizer shoot · Lekki"],
-              ["Dec 12", "DETTY DECEMBER · OUT NOW"],
+              ["Dec 25", "DETTY DECEMBER · OUT NOW"],
             ].map(([day, event]) => (
               <div key={event} className="flex gap-4 border-b border-white/[0.055] py-[9px]">
                 <span className="w-[42px] shrink-0 text-[8px] font-medium text-white/35">{day}</span>
@@ -1218,7 +1218,7 @@ function MailApp({ onClose, app }: AppProps & { app: IosApp }) {
     {
       from: "Tola (Manager)",
       subject: "Roll-out schedule v4 (FINAL FINAL)",
-      preview: "12.12 at midnight. Pre-save link is live. I need the artwork by Friday.",
+      preview: "12.25 at midnight. Pre-save link is live. I need the artwork by Friday.",
       time: "Yesterday",
       unread: true,
     },
@@ -1328,14 +1328,14 @@ function WalletApp({ onClose, app }: AppProps & { app: IosApp }) {
             <span className="text-[9px] font-light italic text-black/55">DEBIT</span>
           </div>
           <p className="relative mt-[22px] font-mono text-[12px] tracking-[0.12em] text-black/75">
-            •••• 1212
+            •••• 1225
           </p>
           <div className="relative mt-[12px] flex items-end justify-between">
             <div>
               <p className="text-[7px] uppercase tracking-[0.12em] text-black/45">Card holder</p>
               <p className="text-[9px] font-medium uppercase tracking-[0.06em] text-black/75">UGAZEE</p>
             </div>
-            <span className="text-[18px] font-semibold tracking-[-0.04em] text-black/70">12.12</span>
+            <span className="text-[18px] font-semibold tracking-[-0.04em] text-black/70">12.25</span>
           </div>
         </div>
 
@@ -1347,7 +1347,7 @@ function WalletApp({ onClose, app }: AppProps & { app: IosApp }) {
             <ChevronRight size={14} className="text-white/25" aria-hidden="true" />
           </div>
           <p className="mt-[14px] text-[22px] font-semibold tracking-[-0.04em]">Eko Hotel · Sky Lounge</p>
-          <p className="mt-[2px] text-[9px] text-white/35">12.12.26 · 9 PM · Guest +1</p>
+          <p className="mt-[2px] text-[9px] text-white/35">12.25.26 · 9 PM · Guest +1</p>
           <div className="mt-[12px] flex items-end justify-between">
             <div className="h-[34px] w-[34px] rounded-[6px] bg-white/90 p-[3px]">
               <div className="grid h-full w-full grid-cols-5 grid-rows-5 gap-[1px]">

@@ -9,8 +9,9 @@
  *  • Poster:      /public/img/poster.jpg (still frame from the video)
  *  • Covers:      /public/img/covers/*.jpg (1:1, 900×900 or larger)
  *  • Platform URLs: Spotify is wired to the real artist page and releases.
- *    Apple Music / SoundCloud still point at Ugazee searches — swap them when
- *    the official profile links are ready.
+ *    SoundCloud points at the real profile (ugazee, 78 tracks, 587 followers).
+ *    Apple Music still points at an Ugazee search — swap it when the official
+ *    artist link is ready.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -32,6 +33,13 @@ export type Release = {
   tracklist: readonly Track[];
   links: Readonly<Record<PlatformKey, string>>;
   accent: string;
+};
+
+export type SoundCloudTrack = {
+  title: string;
+  duration: string;
+  artwork: string;
+  url: string;
 };
 
 export const config = {
@@ -62,8 +70,8 @@ export const config = {
 
   album: {
     title: "Detty December",
-    dropISO: "2026-12-12T00:00:00+01:00",
-    dropLabel: "12.12.26",
+    dropISO: "2026-12-25T00:00:00+01:00",
+    dropLabel: "12.25.26",
     preSaveUrl: "https://open.spotify.com/artist/7kfEng4OspTrDhaVjucde6",
   },
 
@@ -80,7 +88,7 @@ export const config = {
     openingMessage: "its almost december. album otw",
     replies: [
       { prompt: "let's go", reply: "we outside. i'll send the addy 🤎" },
-      { prompt: "when?!", reply: "12.12. set a reminder. it's a movie." },
+      { prompt: "when?!", reply: "12.25. set a reminder. it's a movie." },
     ],
   },
 
@@ -101,7 +109,7 @@ export const config = {
     },
     soundcloud: {
       name: "SoundCloud",
-      url: "https://soundcloud.com/search?q=Ugazee",
+      url: "https://soundcloud.com/ugazee",
       color: "#FF5500",
       deep: "#2B1307",
       label: "Listen on SoundCloud",
@@ -110,6 +118,92 @@ export const config = {
     PlatformKey,
     { name: string; url: string; color: string; deep: string; label: string }
   >,
+
+  // Real profile scraped from soundcloud.com/ugazee (25 Nov 2026):
+  // 78 tracks, 587 followers, ARTIST PRO, city "ypsi".
+  soundcloud: {
+    handle: "soundcloud.com/ugazee",
+    tier: "ARTIST PRO",
+    trackCount: 78,
+    followers: 587,
+    city: "ypsi",
+    description: "🧞® · 🇳🇬 · #DrumsOfLiberation · #GBDJ",
+    avatar: "/img/soundcloud/avatar.jpg",
+    tracks: [
+      {
+        title: "lucidity prod me",
+        duration: "2:57",
+        artwork: "/img/soundcloud/lucidity.jpg",
+        url: "https://soundcloud.com/ugazee/lucidity-prod-me",
+      },
+      {
+        title: "eyes foward, straight path prod me & jdolla",
+        duration: "2:43",
+        artwork: "/img/soundcloud/eyes-foward.jpg",
+        url: "https://soundcloud.com/ugazee/eyes-foward-straight-path-prod-me-jdolla",
+      },
+      {
+        title: "chill, faro prod me, tayga, the6ers",
+        duration: "2:27",
+        artwork: "/img/soundcloud/chill-faro.jpg",
+        url: "https://soundcloud.com/ugazee/w-farogun-prod-me-tayga",
+      },
+      {
+        title: "bankroll, bankroll prod me & 97",
+        duration: "2:36",
+        artwork: "/img/soundcloud/dol.jpg",
+        url: "https://soundcloud.com/ugazee/bankroll-thoughts-prod-me-97",
+      },
+      {
+        title: "hitstick prod me & 97",
+        duration: "2:43",
+        artwork: "/img/soundcloud/dol.jpg",
+        url: "https://soundcloud.com/ugazee/hitstick-prod-me-97",
+      },
+      {
+        title: "temp prod me & jayysoul",
+        duration: "2:41",
+        artwork: "/img/soundcloud/temp.jpg",
+        url: "https://soundcloud.com/ugazee/temp-prod-me-jayysoul",
+      },
+      {
+        title: "oshe, flyest prod me & 97",
+        duration: "2:37",
+        artwork: "/img/soundcloud/dol.jpg",
+        url: "https://soundcloud.com/ugazee/oshe-flyest-prod-me-97-v2",
+      },
+      {
+        title: "no styler prod me",
+        duration: "2:53",
+        artwork: "/img/soundcloud/dol.jpg",
+        url: "https://soundcloud.com/ugazee/me-nostyler-prod-me",
+      },
+      {
+        title: "cancun, mexico w/ mofe prod me",
+        duration: "2:49",
+        artwork: "/img/soundcloud/cancun.jpg",
+        url: "https://soundcloud.com/ugazee/cancun-mexico-prod-me",
+      },
+      {
+        title: "backup prod me",
+        duration: "2:31",
+        artwork: "/img/soundcloud/backup.jpg",
+        url: "https://soundcloud.com/ugazee/backup-prod-me",
+      },
+      {
+        title: "paranoia prod me",
+        duration: "2:54",
+        artwork: "/img/soundcloud/paranoia.jpg",
+        url: "https://soundcloud.com/ugazee/paranoia-prod-me",
+      },
+      {
+        title: "b cool prod me",
+        duration: "2:36",
+        artwork: "/img/soundcloud/b-cool.jpg",
+        url: "https://soundcloud.com/ugazee/bcool-prod-me",
+      },
+    ] satisfies SoundCloudTrack[],
+  },
 
   socials: [
     { label: "Instagram", url: "https://www.instagram.com/explore/tags/ugazee/" },
@@ -143,13 +237,13 @@ export const config = {
       type: "Single",
       year: 2026,
       cover: "/img/covers/detty-december.jpg",
-      blurb: "The title track. Out 12.12.26 — the reason the phone won't stop ringing.",
+      blurb: "The title track. Out 12.25.26 — the reason the phone won't stop ringing.",
       accent: "#F0A94B",
       tracklist: [{ title: "Detty December", duration: "3:06", featured: true }],
       links: {
         spotify: "https://open.spotify.com/artist/7kfEng4OspTrDhaVjucde6",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
     {
@@ -164,7 +258,7 @@ export const config = {
       links: {
         spotify: "https://open.spotify.com/album/6018uoHnW6sVD6g03GVB37",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
     {
@@ -179,7 +273,7 @@ export const config = {
       links: {
         spotify: "https://open.spotify.com/album/7ijA6mZ0mkJUbxLp8UBA8V",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
     {
@@ -194,7 +288,7 @@ export const config = {
       links: {
         spotify: "https://open.spotify.com/album/3Ehuifp0IxiCVOyiMebnBJ",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
     {
@@ -221,7 +315,7 @@ export const config = {
       links: {
         spotify: "https://open.spotify.com/album/15YQw7CDdulrrORbkKsiRT",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
     {
@@ -242,7 +336,7 @@ export const config = {
       links: {
         spotify: "https://open.spotify.com/album/23XJJjW6gJiOB2q4Kq5HiZ",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
     {
@@ -257,7 +351,7 @@ export const config = {
       links: {
         spotify: "https://open.spotify.com/album/6XZqvyEu1NVEbSq9ipyIKD",
         appleMusic: "https://music.apple.com/us/search?term=Ugazee",
-        soundcloud: "https://soundcloud.com/search?q=Ugazee",
+        soundcloud: "https://soundcloud.com/ugazee",
       },
     },
   ] satisfies Release[],
@@ -286,7 +380,7 @@ export const config = {
       {
         index: "04",
         kicker: "The album",
-        title: "12.12.26",
+        title: "12.25.26",
         copy: "Detty December, the album. The countdown is real. Save the date, then save the link.",
       },
     ],
