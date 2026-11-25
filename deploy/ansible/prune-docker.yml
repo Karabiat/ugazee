@@ -11,14 +11,10 @@
 #   - only images / build cache / containers older than prune_age are removed
 #   - volumes are NEVER pruned unless prune_volumes=true is passed explicitly
 #
-- name: Prune unused Docker data on {{ inventory_hostname }}
+- name: Prune unused Docker data
   hosts: ugazee
   gather_facts: false
   become: true
-
-  vars:
-    prune_age: "{{ prune_age | default('24h') }}"
-    prune_volumes: "{{ prune_volumes | default(false) }}"
 
   tasks:
     - name: Docker disk usage before pruning
