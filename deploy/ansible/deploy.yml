@@ -1,0 +1,270 @@
+---
+# Deploy Ugazee (Next.js) to production as a Docker Compose stack.
+#
+# Usage (from WSL / any Linux control node):
+#   cd deploy/ansible
+#   ansible-playbook deploy.yml
+#
+# Overrides:
+#   ansible-playbook deploy.yml -e host_port=3001 -e bind_addr=0.0.0.0
+#   ansible-playbook deploy.yml -e manage_nginx=true -e server_name=ugazee.com
+#
+- name: Deploy Ugazee web app
+  hosts: ugazee
+  gather_facts: true
+  vars:
+    app_dir: /opt/ugazee
+    app_port: "{{ host_port | default(3000) }}"
+    bind_address: "{{ bind_addr | default('127.0.0.1') }}"
+    # Defaults to the repo root when run in place. Override with:
+    #   -e app_source=/path/to/ugazee
+    project_src: "{{ app_source | default(playbook_dir ~ '/../..') }}"
+    local_archive: /tmp/ugazee-src.tgz
+    remote_archive: "{{ app_dir }}/src.tgz"
+    # Set manage_nginx=true + server_name=<domain> to install an nginx vhost.
+    manage_nginx: "{{ manage_nginx | default(false) }}"
+    server_name: "{{ server_name | default('_') }}"
+
+  tasks:
+    # ---------------- prerequisites ----------------
+    - name: Check whether Docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install Docker Engine (absent)
+      ansible.builtin.shell: curl -fsSL https://get.docker.com | sh
+      when: docker_check.rc != 0
+      args:
+        creates: /usr/bin/docker
+
+    - name: Check whether Docker Compose plugin exists
+      ansible.builtin.command: docker compose version
+      register: compose_check
+      changed_when: false
+      failed_when: false
+
+    - name: Fail when the Compose v2 plugin is unavailable
+      ansible.builtin.assert:
+        that: compose_check.rc == 0
+        fail_msg: >-
+          Docker Compose v2 plugin not found. Install it before deploying
+          (apt-get install docker-compose-plugin).
+
+    - name: Ensure the Docker daemon is running
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+      when: ansible_service_mgr | default('') == 'systemd'
+
+    # Small VPS boxes OOM while `next build` runs without swap.
+    - name: Check swap size
+      ansible.builtin.command: swapon --show=SIZE --noheadings --bytes
+      register: swap_check
+      changed_when: false
+
+    - name: Add 2G swapfile when memory is low and no swap exists
+      when:
+        - ansible_memtotal_mb | int < 2048
+        - swap_check.stdout | trim == ''
+      block:
+        - name: Create swapfile
+          ansible.builtin.command:
+            cmd: fallocate -l 2G /swapfile
+            creates: /swapfile
+        - name: Lock down swapfile permissions
+          ansible.builtin.file:
+            path: /swapfile
+            mode: "0600"
+        - name: Format swapfile
+          ansible.builtin.command: mkswap /swapfile
+          register: mkswap_out
+          changed_when: "'UUID' in mkswap_out.stdout or 'swapspace' in mkswap_out.stdout"
+        - name: Enable swap
+          ansible.builtin.command: swapon /swapfile
+          changed_when: true
+
+    # ---------------- source ----------------
+    - name: Create application directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Package source locally (excludes build output and VCS data)
+      ansible.builtin.shell: >
+        tar czf {{ local_archive }}
+        --exclude=./node_modules --exclude=./.git --exclude=./.next
+        --exclude=./out --exclude=./coverage --exclude=./deploy
+        -C "{{ project_src }}" .
+      delegate_to: localhost
+      become: false
+      changed_when: false
+
+    - name: Upload source archive
+      ansible.builtin.copy:
+        src: "{{ local_archive }}"
+        dest: "{{ remote_archive }}"
+        mode: "0644"
+
+    - name: Clear previous release (avoids stale files)
+      ansible.builtin.file:
+        path: "{{ app_dir }}/{{ item }}"
+        state: absent
+      loop:
+        - app
+        - components
+        - hooks
+        - lib
+        - public
+        - package.json
+        - package-lock.json
+        - next.config.mjs
+        - tsconfig.json
+        - postcss.config.mjs
+        - Dockerfile
+        - docker-compose.yml
+
+    - name: Extract source
+      ansible.builtin.unarchive:
+        src: "{{ remote_archive }}"
+        dest: "{{ app_dir }}"
+        remote_src: true
+        extra_opts:
+          - --overwrite
+
+    - name: Write compose environment file
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+        content: |
+          BIND_ADDR={{ bind_address }}
+          HOST_PORT={{ app_port }}
+
+    # ---------------- port safety ----------------
+    # Refuse to start if another process already owns the port, otherwise the
+    # HTTP probe below could pass against an unrelated service.
+    - name: Find current owner of port {{ app_port }}
+      ansible.builtin.shell: >-
+        ss -ltnp 'sport = :{{ app_port }}' | tail -n +2 | grep -c . || true
+      register: port_busy
+      changed_when: false
+
+    - name: Inspect existing container on that port
+      ansible.builtin.command: docker inspect ugazee-web --format '{% raw %}{{.State.Status}}{% endraw %}'
+      register: existing_container
+      changed_when: false
+      failed_when: false
+
+    - name: Abort when the port is taken by a service that is not ours
+      ansible.builtin.assert:
+        that: port_busy.stdout | int == 0 or (existing_container.rc == 0 and existing_container.stdout | trim == 'running')
+        fail_msg: >-
+          Port {{ app_port }} is already in use by something that is not this
+          stack. Re-run with -e host_port=<free port> (discovery playbook shows
+          which ports are free).
+
+    # ---------------- build & run ----------------
+    - name: Record current image id
+      ansible.builtin.command: docker image inspect --format {% raw %}'{{.Id}}'{% endraw %} ugazee-web:latest
+      register: image_before
+      changed_when: false
+      failed_when: false
+
+    - name: Build application image
+      ansible.builtin.command:
+        cmd: docker compose build
+        chdir: "{{ app_dir }}"
+
+    - name: Read new image id
+      ansible.builtin.command: docker image inspect --format {% raw %}'{{.Id}}'{% endraw %} ugazee-web:latest
+      register: image_after
+      changed_when: false
+
+    - name: Note whether the image changed
+      ansible.builtin.debug:
+        msg: >-
+          image {{ 'rebuilt' if image_before.stdout != image_after.stdout else 'unchanged' }}
+
+    - name: Start the stack
+      ansible.builtin.command:
+        cmd: docker compose up -d --remove-orphans
+        chdir: "{{ app_dir }}"
+      register: up_out
+      changed_when: "'Started' in up_out.stderr or 'Created' in up_out.stderr or 'Recreated' in up_out.stderr"
+
+    - name: Wait for the container to accept connections
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ app_port }}"
+        delay: 2
+        timeout: 90
+
+    - name: Confirm the container itself is healthy
+      ansible.builtin.command:
+        cmd: docker exec ugazee-web node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      register: in_container_probe
+      retries: 10
+      delay: 3
+      until: in_container_probe.rc == 0
+      changed_when: false
+
+    - name: Verify the published port serves HTTP 200
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}/"
+        status_code: 200
+        return_content: false
+      register: probe
+      retries: 10
+      delay: 3
+      until: probe.status == 200
+
+    - name: Show running stack
+      ansible.builtin.command:
+        cmd: docker compose ps
+        chdir: "{{ app_dir }}"
+      register: ps_out
+      changed_when: false
+
+    - name: Deployment summary
+      ansible.builtin.debug:
+        msg:
+          stack: "{{ ps_out.stdout_lines }}"
+          upstream: "http://{{ bind_address }}:{{ app_port }}"
+          image: "{{ image_after.stdout | trim | truncate(19, true, '') }}"
+
+    # ---------------- optional host nginx vhost ----------------
+    - name: Install nginx vhost
+      when: manage_nginx | bool
+      block:
+        - name: Check nginx presence
+          ansible.builtin.command: nginx -v
+          register: nginx_check
+          changed_when: false
+          failed_when: false
+
+        - name: Render vhost config
+          ansible.builtin.template:
+            src: templates/nginx-ugazee.conf.j2
+            dest: /etc/nginx/sites-available/ugazee.conf
+            mode: "0644"
+          notify: Reload nginx
+
+        - name: Enable vhost
+          ansible.builtin.file:
+            src: /etc/nginx/sites-available/ugazee.conf
+            dest: /etc/nginx/sites-enabled/ugazee.conf
+            state: link
+          notify: Reload nginx
+
+        - name: Validate nginx configuration
+          ansible.builtin.command: nginx -t
+          changed_when: false
+
+  handlers:
+    - name: Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
