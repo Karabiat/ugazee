@@ -21,14 +21,6 @@
     project_src: "{{ app_source | default(playbook_dir ~ '/../..') }}"
     local_archive: /tmp/ugazee-src.tgz
     remote_archive: "{{ app_dir }}/src.tgz"
-    # Swapfile is OFF by default: with little free disk it can starve the host.
-    create_swap: "{{ create_swap | default(false) }}"
-    # Docker image tarball on the control node. When set, it is transferred and
-    # loaded instead of building on the server (recommended on small VPS hosts).
-    image_archive: "{{ image_archive | default('') }}"
-    # Set manage_nginx=true + server_name=<domain> to install an nginx vhost.
-    manage_nginx: "{{ manage_nginx | default(false) }}"
-    server_name: "{{ server_name | default('_') }}"
 
   tasks:
     # ---------------- prerequisites ----------------
