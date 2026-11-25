@@ -1504,7 +1504,7 @@ function HealthApp({ onClose, app }: AppProps & { app: IosApp }) {
 function FilesApp({ onClose, app }: AppProps & { app: IosApp }) {
   const files = [
     { name: "Detty December — FINAL MASTER.wav", meta: "31.4 MB · Today", icon: FileAudio, color: "#FF5500" },
-    { name: "Ugazee — Wallpaper.mp4", meta: "5.3 MB · Yesterday", icon: ImageIcon, color: "#0A84FF" },
+    { name: "Ugazee — Wallpaper.mp4", meta: "1.2 MB · Yesterday", icon: ImageIcon, color: "#0A84FF" },
     { name: "Cover Artwork 1:1", meta: "5 items · 900×900", icon: Folder, color: "#FFD60A" },
     { name: "Visualizer References", meta: "12 items", icon: Folder, color: "#FFD60A" },
     { name: "Roll-out.pdf", meta: "2.1 MB · Mon", icon: FileAudio, color: "#FF453A" },
