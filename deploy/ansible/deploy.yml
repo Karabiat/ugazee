@@ -181,15 +181,32 @@
       changed_when: false
       failed_when: false
 
-    - name: Require a prebuilt image when the host cannot spare disk for a build
+    - name: Check for an existing application image
+      ansible.builtin.command: docker image inspect --format {% raw %}'{{.Id}}'{% endraw %} ugazee-web:latest
+      register: image_probe
+      changed_when: false
+      failed_when: false
+
+    - name: Decide how to provide the image
+      ansible.builtin.set_fact:
+        resolved_action: >-
+          {{ 'load' if image_archive | length > 0
+             else (image_action if image_action in ['build', 'reuse']
+             else ('reuse' if image_probe.rc == 0 else 'build')) }}
+
+    - name: Require a prebuilt image when a build would not fit on disk
       ansible.builtin.assert:
-        that: image_archive | length > 0 or root_free_mb | int > 1500
+        that: resolved_action != 'build' or root_free_mb | int > 1500
         fail_msg: >-
-          Only {{ root_free_mb }} MB free on /. Pass a prebuilt tarball:
-          -e image_archive=/path/to/ugazee-image.tar
+          Only {{ root_free_mb }} MB free on / and no image is available.
+          Pass a prebuilt tarball: -e image_archive=/path/to/ugazee-image.tar
+
+    - name: Reveal image plan
+      ansible.builtin.debug:
+        msg: "image action: {{ resolved_action }}"
 
     - name: Transfer and load prebuilt image
-      when: image_archive | length > 0
+      when: resolved_action == 'load'
       block:
         - name: Upload image tarball
           ansible.builtin.copy:
@@ -209,7 +226,7 @@
             state: absent
 
     - name: Build application image on the server
-      when: image_archive | length == 0
+      when: resolved_action == 'build'
       ansible.builtin.command:
         cmd: docker compose build
         chdir: "{{ app_dir }}"
@@ -230,6 +247,21 @@
         chdir: "{{ app_dir }}"
       register: up_out
       changed_when: "'Started' in up_out.stderr or 'Created' in up_out.stderr or 'Recreated' in up_out.stderr"
+
+    # ---------------- firewall ----------------
+    - name: Read current ufw rules
+      ansible.builtin.command: ufw status
+      register: ufw_status
+      changed_when: false
+      failed_when: false
+      when: bind_address != '127.0.0.1'
+
+    - name: Allow inbound {{ app_port }}/tcp for the published port
+      ansible.builtin.command:
+        cmd: ufw allow {{ app_port }}/tcp comment ugazee
+      when:
+        - bind_address != '127.0.0.1'
+        - (app_port ~ '/tcp') not in ufw_status.stdout
 
     - name: Wait for the container to accept connections
       ansible.builtin.wait_for:
